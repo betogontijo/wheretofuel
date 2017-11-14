@@ -3,7 +3,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.example.demo</groupId>
+	<groupId>br.com.betogontijo</groupId>
 	<artifactId>wheretofuel</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
@@ -53,6 +53,7 @@
 			<artifactId>nativeutils</artifactId>
 			<version>1.0</version>
 		</dependency>
+		
 	</dependencies>
 
 	<build>
@@ -63,6 +64,5 @@
 			</plugin>
 		</plugins>
 	</build>
-
 
 </project>
