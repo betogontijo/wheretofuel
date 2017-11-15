@@ -1,0 +1,2 @@
+serviceClass: com.betogontijo.wheretofuel.client.GreetingService
+path: 83BA67D3AF94C0CB000E1EEAACCB257F.gwt.rpc
