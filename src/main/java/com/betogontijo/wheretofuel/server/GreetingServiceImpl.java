@@ -87,7 +87,7 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements Greetin
 			GLPK.glp_set_obj_coef(lp, 3, -1);
 
 			// Write model to file
-			// GLPK.glp_write_lp(lp, null, "lp.lp");
+			 GLPK.glp_write_lp(lp, null, "lp.lp");
 
 			// Solve model
 			parm = new glp_smcp();

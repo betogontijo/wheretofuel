@@ -18,8 +18,6 @@ public class WhereToFuel implements EntryPoint {
 
 	private final GreetingServiceAsync greetingService = GWT.create(GreetingService.class);
 
-	private final String mapsContainer = "maps";
-
 	public void onModuleLoad() {
 		loadMapApi();
 	}
@@ -53,7 +51,7 @@ public class WhereToFuel implements EntryPoint {
 	private void draw() {
 		drawDirections();
 		// drawAutocomplete();
-
+		// drawPlaces();
 	}
 
 	/**
@@ -69,7 +67,7 @@ public class WhereToFuel implements EntryPoint {
 			public void onSuccess(String result) {
 				// TODO Auto-generated method stub
 				HTML html = new HTML(result);
-				RootPanel.get(mapsContainer).add(html);
+				RootPanel.get().add(html);
 			}
 
 			@Override
@@ -78,7 +76,7 @@ public class WhereToFuel implements EntryPoint {
 
 			}
 		});
-		RootPanel.get(mapsContainer).add(widget);
+		RootPanel.get().add(widget);
 	}
 
 	private void drawDirections() {

@@ -1,61 +1,29 @@
 package com.betogontijo.wheretofuel.client;
 
-/*
- * #%L
- * GWT Maps API V3 - Showcase
- * %%
- * Copyright (C) 2011 - 2012 GWT Maps API V3
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+import java.util.ArrayList;
 
 import com.google.gwt.ajaxloader.client.ArrayHelper;
+import com.google.gwt.cell.client.SelectionCell;
 import com.google.gwt.core.client.Callback;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsArrayString;
-import com.google.gwt.dom.client.Element;
+import com.google.gwt.editor.client.Editor.Path;
 import com.google.gwt.geolocation.client.Geolocation;
+import com.google.gwt.geolocation.client.Geolocation.PositionOptions;
 import com.google.gwt.geolocation.client.Position;
 import com.google.gwt.geolocation.client.PositionError;
 import com.google.gwt.maps.client.MapOptions;
 import com.google.gwt.maps.client.MapTypeId;
 import com.google.gwt.maps.client.MapWidget;
 import com.google.gwt.maps.client.base.LatLng;
-import com.google.gwt.maps.client.base.LatLngBounds;
-import com.google.gwt.maps.client.events.bounds.BoundsChangeMapEvent;
-import com.google.gwt.maps.client.events.bounds.BoundsChangeMapHandler;
-import com.google.gwt.maps.client.events.click.ClickMapEvent;
-import com.google.gwt.maps.client.events.click.ClickMapHandler;
-import com.google.gwt.maps.client.events.place.PlaceChangeMapEvent;
-import com.google.gwt.maps.client.events.place.PlaceChangeMapHandler;
-import com.google.gwt.maps.client.overlays.Marker;
-import com.google.gwt.maps.client.overlays.MarkerOptions;
-import com.google.gwt.maps.client.placeslib.Autocomplete;
-import com.google.gwt.maps.client.placeslib.AutocompleteOptions;
 import com.google.gwt.maps.client.placeslib.AutocompleteType;
-import com.google.gwt.maps.client.placeslib.PlaceGeometry;
 import com.google.gwt.maps.client.placeslib.PlaceResult;
-import com.google.gwt.maps.client.services.DirectionsRenderer;
-import com.google.gwt.maps.client.services.DirectionsRendererOptions;
-import com.google.gwt.maps.client.services.DirectionsRequest;
-import com.google.gwt.maps.client.services.DirectionsResult;
-import com.google.gwt.maps.client.services.DirectionsResultHandler;
-import com.google.gwt.maps.client.services.DirectionsService;
-import com.google.gwt.maps.client.services.DirectionsStatus;
-import com.google.gwt.maps.client.services.Distance;
-import com.google.gwt.maps.client.services.DistanceMatrixElementStatus;
+import com.google.gwt.maps.client.placeslib.PlaceSearchHandler;
+import com.google.gwt.maps.client.placeslib.PlaceSearchPagination;
+import com.google.gwt.maps.client.placeslib.PlaceSearchRequest;
+import com.google.gwt.maps.client.placeslib.PlacesService;
+import com.google.gwt.maps.client.placeslib.PlacesServiceStatus;
 import com.google.gwt.maps.client.services.DistanceMatrixRequest;
 import com.google.gwt.maps.client.services.DistanceMatrixRequestHandler;
 import com.google.gwt.maps.client.services.DistanceMatrixResponse;
@@ -63,77 +31,76 @@ import com.google.gwt.maps.client.services.DistanceMatrixResponseElement;
 import com.google.gwt.maps.client.services.DistanceMatrixResponseRow;
 import com.google.gwt.maps.client.services.DistanceMatrixService;
 import com.google.gwt.maps.client.services.DistanceMatrixStatus;
-import com.google.gwt.maps.client.services.Duration;
 import com.google.gwt.maps.client.services.TravelMode;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.RootPanel;
-import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.sencha.gxt.core.client.ValueProvider;
+import com.sencha.gxt.data.shared.ListStore;
+import com.sencha.gxt.data.shared.ModelKeyProvider;
+import com.sencha.gxt.data.shared.PropertyAccess;
+import com.sencha.gxt.widget.core.client.ListView;
 
-/**
- * See <a href=
- * "https://developers.google.com/maps/documentation/javascript/layers.html#FusionTables"
- * >FusionTables API Doc</a>
- */
 public class DirectionsServiceMapWidget extends Composite {
+
+	interface PlaceProperties extends PropertyAccess<Place> {
+		@Path("name")
+		ModelKeyProvider<Place> key();
+
+		@Path("distance")
+		ValueProvider<Place, String> distance();
+	}
 
 	private VerticalPanel pWidget;
 	private MapWidget mapWidget;
-	private HTML htmlDistanceMatrixService = new HTML("&nbsp;");
-	private TextBox tbPlaces;
-	private LatLng currentPos = null;
+	private LatLng currentPos = LatLng.newInstance(-19.9283827, -43.9924392);
+	private ListView<Place, String> flowPanel;
 
 	public DirectionsServiceMapWidget() {
 		pWidget = new VerticalPanel();
+		createMap();
+
+		RootPanel.get().add(pWidget);
+
+		final PlaceProperties placeProperties = GWT.create(PlaceProperties.class);
+
+		ListStore<Place> listStore = new ListStore<Place>(placeProperties.key());
+		flowPanel = new ListView<Place, String>(listStore, placeProperties.distance());
+		
+		SelectionCell cell = new SelectionCell(new ArrayList<String>());
+		flowPanel.setCell(cell);
+		
+		pWidget.add(flowPanel);
+
 		initWidget(pWidget);
 
-		draw();
+		getCurrentPosition();
 	}
 
-	private void draw() {
-		pWidget.clear();
-		pWidget.add(new HTML("<br/>"));
-
-		tbPlaces = new TextBox();
-		tbPlaces.setWidth("350px");
-
-		HorizontalPanel hp = new HorizontalPanel();
-		pWidget.add(hp);
-		hp.add(tbPlaces);
-		hp.add(htmlDistanceMatrixService);
-
-		drawMap();
-		// drawAutoComplete();
-		// drawDirectionsWithMidPoint();
-	}
-
-	private void drawMap() {
+	private void getCurrentPosition() {
 		Geolocation geolocation = Geolocation.getIfSupported();
+		PositionOptions positionOptions = new PositionOptions();
+		positionOptions.setHighAccuracyEnabled(true);
 		geolocation.getCurrentPosition(new Callback<Position, PositionError>() {
 
 			@Override
 			public void onSuccess(Position result) {
 				// TODO Auto-generated method stub
-				drawMap(result.getCoordinates().getLatitude(), result.getCoordinates().getLongitude());
+				currentPos = LatLng.newInstance(result.getCoordinates().getLatitude(),
+						result.getCoordinates().getLongitude());
+				searchRequest(currentPos);
 			}
 
 			@Override
 			public void onFailure(PositionError reason) {
 				// TODO Auto-generated method stub
-				drawMap(-19.9283827, -43.9924392);
+				searchRequest(currentPos);
 			}
-		});
+		}, positionOptions);
 	}
 
-	Marker markerBasic;
-
-	final DirectionsRenderer directionsDisplay = DirectionsRenderer
-			.newInstance(DirectionsRendererOptions.newInstance());
-
-	private void drawMap(double latitude, double longitude) {
-		currentPos = LatLng.newInstance(latitude, longitude);
+	private void createMap() {
 		MapOptions opts = MapOptions.newInstance();
 		opts.setZoom(13);
 		opts.setCenter(currentPos);
@@ -141,103 +108,44 @@ public class DirectionsServiceMapWidget extends Composite {
 
 		mapWidget = new MapWidget(opts);
 
-		directionsDisplay.setMap(mapWidget);
-		DirectionsRendererOptions directionsRendererOptions = DirectionsRendererOptions.newInstance();
-		directionsRendererOptions.setDraggable(true);
-		directionsDisplay.setOptions(directionsRendererOptions);
-		MarkerOptions options = MarkerOptions.newInstance();
-		options.setPosition(currentPos);
-		markerBasic = Marker.newInstance(options);
-		markerBasic.setMap(mapWidget);
-
 		pWidget.add(mapWidget);
-		mapWidget.setSize(RootPanel.getBodyElement().getClientWidth() + "px", "550px");
-
-		mapWidget.addClickHandler(new ClickMapHandler() {
-			public void onEvent(ClickMapEvent event) {
-				// TODO fix the event getting, getting ....
-				GWT.log("clicked on latlng=" + event.getMouseEvent().getLatLng());
-				drawDirectionsWithMidPoint(currentPos, event.getMouseEvent().getLatLng());
-			}
-		});
-
-		drawAutoComplete();
 	}
 
-	private void drawAutoComplete() {
+	private void searchRequest(LatLng clickLocation) {
+		AutocompleteType[] types = new AutocompleteType[1];
+		types[0] = AutocompleteType.GAS_STATION;
 
-		Element element = tbPlaces.getElement();
+		PlaceSearchRequest request = PlaceSearchRequest.newInstance();
+		request.setLocation(clickLocation);
+		request.setRadius(5000d);
+		// TODO add more AutocompleteTypes...
+		// request.setTypes(AutocompleteType.ESTABLISHMENT);
+		request.setTypes(types);
 
-		AutocompleteType[] types = new AutocompleteType[2];
-		types[0] = AutocompleteType.ESTABLISHMENT;
-		types[1] = AutocompleteType.GEOCODE;
+		PlacesService placeService = PlacesService.newInstance(mapWidget);
+		placeService.nearbySearch(request, new PlaceSearchHandler() {
 
-		AutocompleteOptions options = AutocompleteOptions.newInstance();
-		options.setTypes(types);
-		options.setBounds(mapWidget.getBounds());
+			@Override
+			public void onCallback(JsArray<PlaceResult> results, PlaceSearchPagination pagination,
+					PlacesServiceStatus status) {
 
-		final Autocomplete autoComplete = Autocomplete.newInstance(element, options);
-
-		autoComplete.addPlaceChangeHandler(new PlaceChangeMapHandler() {
-			public void onEvent(PlaceChangeMapEvent event) {
-
-				PlaceResult result = autoComplete.getPlace();
-				GWT.log(result.getTypes().join(","));
-
-				PlaceGeometry geomtry = result.getGeometry();
-				LatLng center = geomtry.getLocation();
-
-				drawDirectionsWithMidPoint(currentPos, center);
-
-				mapWidget.panTo(center);
-
-				GWT.log("place changed center=" + center);
-			}
-		});
-
-		mapWidget.addBoundsChangeHandler(new BoundsChangeMapHandler() {
-			public void onEvent(BoundsChangeMapEvent event) {
-				LatLngBounds bounds = mapWidget.getBounds();
-				autoComplete.setBounds(bounds);
-			}
-		});
-	}
-
-	private void drawDirectionsWithMidPoint(LatLng origin, LatLng destination) {
-		DirectionsRequest request = DirectionsRequest.newInstance();
-		request.setOrigin(origin);
-		request.setDestination(destination);
-		request.setTravelMode(TravelMode.DRIVING);
-		request.setOptimizeWaypoints(true);
-
-		DirectionsService o = DirectionsService.newInstance();
-		o.route(request, new DirectionsResultHandler() {
-			public void onCallback(DirectionsResult result, DirectionsStatus status) {
-				if (status == DirectionsStatus.OK) {
-					markerBasic.clear();
-					directionsDisplay.setDirections(result);
-					getDistance(origin, destination);
-				} else if (status == DirectionsStatus.INVALID_REQUEST) {
-
-				} else if (status == DirectionsStatus.MAX_WAYPOINTS_EXCEEDED) {
-
-				} else if (status == DirectionsStatus.NOT_FOUND) {
-
-				} else if (status == DirectionsStatus.OVER_QUERY_LIMIT) {
-
-				} else if (status == DirectionsStatus.REQUEST_DENIED) {
-
-				} else if (status == DirectionsStatus.UNKNOWN_ERROR) {
-
-				} else if (status == DirectionsStatus.ZERO_RESULTS) {
-
+				if (status == PlacesServiceStatus.OK) {
+					// look up the details for the first place
+					if (results.length() > 0) {
+						for (int i = 0; i < results.length(); i++) {
+							PlaceResult placeResult = results.get(i);
+							getDistance(currentPos, placeResult.getGeometry().getLocation(), placeResult);
+						}
+					}
+				} else {
+					Window.alert("Status is: status=" + status);
 				}
-
 			}
+
 		});
 	}
 
-	private void getDistance(LatLng origin, LatLng destination) {
+	private void getDistance(LatLng origin, LatLng destination, final PlaceResult placeResult) {
 
 		LatLng[] ao = new LatLng[1];
 		ao[0] = origin;
@@ -256,13 +164,7 @@ public class DirectionsServiceMapWidget extends Composite {
 			public void onCallback(DistanceMatrixResponse response, DistanceMatrixStatus status) {
 				GWT.log("status=" + status.value());
 
-				if (status == DistanceMatrixStatus.INVALID_REQUEST) {
-
-				} else if (status == DistanceMatrixStatus.MAX_DIMENSIONS_EXCEEDED) {
-
-				} else if (status == DistanceMatrixStatus.MAX_ELEMENTS_EXCEEDED) {
-
-				} else if (status == DistanceMatrixStatus.OK) {
+				if (status == DistanceMatrixStatus.OK) {
 
 					@SuppressWarnings("unused")
 					JsArrayString dest = response.getDestinationAddresses();
@@ -272,28 +174,15 @@ public class DirectionsServiceMapWidget extends Composite {
 
 					GWT.log("rows.length=" + rows.length());
 					DistanceMatrixResponseRow d = rows.get(0);
-					JsArray<DistanceMatrixResponseElement> elements = d.getElements();
-					for (int i = 0; i < elements.length(); i++) {
-						DistanceMatrixResponseElement e = elements.get(i);
-						Distance distance = e.getDistance();
-						Duration duration = e.getDuration();
-
-						@SuppressWarnings("unused")
-						DistanceMatrixElementStatus st = e.getStatus();
-						GWT.log("distance=" + distance.getText() + " value=" + distance.getValue());
-						GWT.log("duration=" + duration.getText() + " value=" + duration.getValue());
-
-						String html = "&nbsp;&nbsp;Distance=" + distance.getText() + " Duration=" + duration.getText()
-								+ " ";
-						htmlDistanceMatrixService.setHTML(html);
-					}
-
-				} else if (status == DistanceMatrixStatus.OVER_QUERY_LIMIT) {
-
-				} else if (status == DistanceMatrixStatus.REQUEST_DENIED) {
-
-				} else if (status == DistanceMatrixStatus.UNKNOWN_ERROR) {
-
+					DistanceMatrixResponseElement e = d.getElements().get(0);
+					String distance = e.getDistance().getText();
+					String name = placeResult.getName();
+					String gasPrice = "3.70";
+					String address = placeResult.getFormatted_Address();
+					String phone = placeResult.getFormatted_Phone_Number();
+					int rating = placeResult.getRating();
+					placeResult.getRating();
+					flowPanel.getStore().add(new Place(name, distance, gasPrice, address, phone, rating));
 				}
 
 			}
