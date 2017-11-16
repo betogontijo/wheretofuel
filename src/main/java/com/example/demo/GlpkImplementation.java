@@ -13,18 +13,21 @@ import br.com.betogontijo.nativeutils.GlpkLoader;
 
 public class GlpkImplementation {
 
+	// This loads all Glpk dependencies
 	public GlpkImplementation() {
 		GlpkLoader.load();
-	}
-
-	public void runSimplex() {
-		System.out.println(GLPK.glp_version());
 	}
 
 	public String getVersion() {
 		return GLPK.glp_version();
 	}
 
+	// Here is where simplex is really executed
+	// Params:
+	// table: simplex matrix
+	// type: MIN or MAX
+	// restric: Restrictions for variables
+	// const: Contant from main function
 	public String solve(List<List<Double>> table, String type, List<Double> restric, Double constant) {
 		glp_prob lp;
 		glp_smcp parm;
@@ -45,8 +48,6 @@ public class GlpkImplementation {
 			GLPK.glp_set_col_bnds(lp, index, GLPKConstants.GLP_DB, restric.get(i), restric.get(i + 1));
 		}
 
-		// Create constraints
-
 		// Allocate memory
 		ind = GLPK.new_intArray(table.size());
 		val = GLPK.new_doubleArray(table.size());
@@ -64,21 +65,6 @@ public class GlpkImplementation {
 			}
 			GLPK.glp_set_mat_row(lp, i, table.get(i).size() - 1, ind, val);
 		}
-		// GLPK.glp_set_row_name(lp, 1, "c1");
-		// // GLPK.glp_set_row_bnds(lp, 1, GLPKConstants.GLP_DB, 0, 0.2);
-		// GLPK.intArray_setitem(ind, 1, 1);
-		// GLPK.intArray_setitem(ind, 2, 2);
-		// GLPK.doubleArray_setitem(val, 1, 1.);
-		// GLPK.doubleArray_setitem(val, 2, -.5);
-		// GLPK.glp_set_mat_row(lp, 1, 2, ind, val);
-		//
-		// GLPK.glp_set_row_name(lp, 2, "c2");
-		// GLPK.glp_set_row_bnds(lp, 2, GLPKConstants.GLP_UP, 0, 0.4);
-		// GLPK.intArray_setitem(ind, 1, 2);
-		// GLPK.intArray_setitem(ind, 2, 3);
-		// GLPK.doubleArray_setitem(val, 1, -1.);
-		// GLPK.doubleArray_setitem(val, 2, 1.);
-		// GLPK.glp_set_mat_row(lp, 2, 2, ind, val);
 
 		// Free memory
 		GLPK.delete_intArray(ind);

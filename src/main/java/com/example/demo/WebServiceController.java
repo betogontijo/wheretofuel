@@ -8,9 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.servlet.ServletContext;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,22 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class WebServiceController {
 
-	@Autowired
-	ServletContext servletContext;
 	GlpkImplementation glpkImplementation = new GlpkImplementation();
 
-	@RequestMapping(value = "/Simplex", method = RequestMethod.GET)
-	public String simplexIndex() throws IOException {
-		String index = "";
-		InputStream is = getClass().getClassLoader().getResourceAsStream("static/Simplex/index.html");
-		BufferedReader br = new BufferedReader(new InputStreamReader(is));
-		String line = null;
-		while ((line = br.readLine()) != null) {
-			index += line;
-		}
-		return index;
-	}
-
+	// retrieve index.html from project resources
+	@CrossOrigin
 	@RequestMapping(value = "/WhereToFuel", method = RequestMethod.GET)
 	public String whereToFuelIndex() throws IOException {
 		String index = "";
@@ -47,12 +33,9 @@ public class WebServiceController {
 		return index;
 	}
 
-	@RequestMapping(value = "/WebService", method = RequestMethod.POST, headers = "Content-Type=application/x-www-form-urlencoded")
-	public String simplex(@RequestParam(value = "table") String table, @RequestParam(value = "type") String type) {
-		return glpk(table, type, "0");
-	}
-
-	@RequestMapping(value = "/glpk", method = RequestMethod.POST, headers = "Content-Type=application/x-www-form-urlencoded")
+	// execute simplex for prodution mix
+	@CrossOrigin
+	@RequestMapping(value = "/glpk", method = RequestMethod.POST)
 	public String glpk(@RequestParam(value = "table") String table, @RequestParam(value = "type") String type,
 			@RequestParam(value = "const") String cnst) {
 		try {
@@ -74,14 +57,39 @@ public class WebServiceController {
 		}
 	}
 
+	// Just for testing purpose
+	@CrossOrigin
 	@RequestMapping(value = "/glpk/get", method = RequestMethod.GET)
 	public String glpkGet(@RequestParam(value = "table") String table, @RequestParam(value = "type") String type,
 			@RequestParam(value = "const") String cnst) {
 		return glpk(table, type, cnst);
 	}
 
+	// Glpk checker
+	@CrossOrigin
 	@RequestMapping(value = "/glpk/version", method = RequestMethod.GET)
 	public String glpkGet() {
 		return glpkImplementation.getVersion();
+	}
+
+	// This is from the last work //
+
+	@CrossOrigin
+	@RequestMapping(value = "/Simplex", method = RequestMethod.GET)
+	public String simplexIndex() throws IOException {
+		String index = "";
+		InputStream is = getClass().getClassLoader().getResourceAsStream("static/Simplex/index.html");
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		String line = null;
+		while ((line = br.readLine()) != null) {
+			index += line;
+		}
+		return index;
+	}
+
+	@CrossOrigin
+	@RequestMapping(value = "/WebService", method = RequestMethod.POST)
+	public String simplex(@RequestParam(value = "table") String table, @RequestParam(value = "type") String type) {
+		return glpk(table, type, "0");
 	}
 }
